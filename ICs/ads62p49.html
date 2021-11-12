@@ -1,0 +1,1367 @@
+<script>
+    let C_REG_COUNT = 19;
+    
+    function Refresh(){
+        let retArr = new Uint8Array(C_REG_COUNT).fill(0);
+        
+        // Get list of HTML object with ID: REGxx_ and parse it value 
+        for(let reg=0; reg<retArr.length; reg++){
+            let items = document.querySelectorAll('[id^=REG' + reg + '_]'); 
+            for(let i=0; i<items.length; i++) {
+                let temp = items[i].id.replace('REG' + reg + '_BIT','').split(':');
+                let offset = (temp.length == 1) ? parseInt(temp[0]) : parseInt(temp[temp.length-1]);
+                let length = (temp.length == 1) ? 1 : (parseInt(temp[0]) - offset) + 1;
+                //console.log(items[i].id + " : " + temp + " : offset=" + offset + " length=" + length);
+                retArr[reg] |= items[i].selectedIndex << offset;
+            }
+        }
+                
+        document.getElementById("cfg_reg").value = "";
+        for(let i=0; i<retArr.length; i++) {
+            document.getElementById("cfg_reg").value = document.getElementById("cfg_reg").value + retArr[i].toString(16).padStart(2, "0").toUpperCase() + " ";
+        }
+    };
+    
+    function Parse(){
+        let varArr = GetInputData();
+        
+        // Get list of HTML object with ID: REGxx_ and set it value
+        for(let reg=0; reg<varArr.length; reg++){
+            let items = document.querySelectorAll('[id^=REG' + reg + '_]'); 
+            for(let i=0; i<items.length; i++) {
+                let temp = items[i].id.replace('REG' + reg + '_BIT','').split(':');
+                let offset = (temp.length == 1) ? parseInt(temp[0]) : parseInt(temp[temp.length-1]);
+                let length = (temp.length == 1) ? 1 : (parseInt(temp[0]) - offset) + 1;
+                //console.log(items[i].id + " : " + temp + " : offset=" + offset + " length=" + length);
+                let mask = 0xFF >> (8 - length)
+                items[i].selectedIndex = (varArr[reg] >> offset & mask);
+            }
+        }
+    }
+    
+    function GetInputData() {
+        let retArr = new Uint8Array(C_REG_COUNT).fill(0);
+        let rawData = document.getElementById("cfg_reg").value.split(" ")
+        for(let i=0; i<rawData.length; i++) {
+            if(rawData[i].length != 0) {
+                let item = parseInt(rawData[i], 16)
+                retArr[i] = item;
+            }
+        } 
+        return retArr;
+    }
+    
+</script>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    th {
+      background-color: #04AA6D;
+      color: white;
+    }
+
+    th, td {
+      padding: 15px;
+      text-align: left;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+    }
+
+    tr.diagnostics {
+        background-color: #f7cdcd;
+    }
+
+    select {
+        width: 100%;
+    }
+    
+    #fixedContainer
+    {
+      background-color:#ddd;
+      position: fixed;
+      width: 60%;
+      height: 80px;
+      left: 40%;
+      top: 0%;
+    }
+</style>
+
+<body onload="Parse()">
+
+<h1>ADS62P49 Config parser/creator</h1>
+
+<div id="fixedContainer">
+    <p>Config register value, write in HEX format. To generate new confic, change value in comboboxes.</p>
+    <input style="width:80%" type="text" id="cfg_reg" name="cfg_reg" value="00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00">
+    <button type="button" id="cfg_parser" onclick="Parse()">Parse</button>
+</div>
+<h2> REG00 (0x00) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>0<br>(SERIAL READOUT)</th>
+            <td></th>
+            <td>
+                <select id="REG0_BIT0" onchange="Refresh()">
+                    <option>Serial readout disabled. (0)</option>
+                    <option>Serial readout enabled. (1)</option>
+                </select>
+            </td>
+        </tr>	
+        <tr>
+            <td>7<br>(RESET)</td>
+            <td></td>
+            <td>
+                <select id="REG0_BIT7" onchange="Refresh()">
+                    <option>Normal mode (0)</option>
+                    <option>Reset IC(1)</option>
+                </select>
+            </td>
+            <td>
+                Set by software, clear by hardware
+            </td>
+        </tr>
+			   
+    </table>
+    
+    <h2> REG01 (0x20) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>2<br>(ENABLE LOW SPEED MODE)</th>
+            <td></th>
+            <td>
+                <select id="REG1_BIT2" onchange="Refresh()">
+                    <option>Low speed mode disabled (> 80 MSPS). (0)</option>
+                    <option>Low speed mode enabled (≤ 80 MSPS). (1)</option>
+                </select>
+            </td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG02 (0x3F) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>1<br>(STANDBY)</th>
+            <td></th>
+            <td>
+                <select id="REG2_BIT1" onchange="Refresh()">
+                    <option>Normal operation. (0)</option>
+                    <option>Both ADC channels are put in standby. (1)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+		<tr>
+            <td>6:5<br>(REF. Internal or external reference selection)</th>
+            <td></th>
+            <td>
+                <select id="REG2_BIT6:5" onchange="Refresh()">
+                    <option>Internal reference enabled. (00)</option>
+                    <option>-</option>
+					<option>-</option>
+					<option>External reference enabled. (11)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG03 (0x40) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>3:0<br>(POWER DOWN MODES)</th>
+            <td></th>
+            <td>
+                <select id="REG3_BIT3:0" onchange="Refresh()">
+                    <option>Pins CTRL1, CTRL2, and CTRL3 determine power down modes. (0000)</option>
+                    <option>-</option><option>-</option><option>-</option><option>-</option><option>-</option><option>-</option><option>-</option>
+                    <option>Normal operation. (1000)</option>
+					<option>Output buffer disabled for channel B. (1001)</option>
+					<option>Output buffer disabled for channel A. (1010)</option>
+					<option>Output buffer disabled for channel A and B. (1011)</option>
+					<option>Global power down. (1100)</option>
+					<option>Channel B standby. (1101)</option>
+					<option>Channel A standby. (1110)</option>
+					<option>Multiplexed mode, MUX- (only with CMOS interface). (1111)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG04 (0x41) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>7<br>(LVDS CMOS)</td>
+            <td></td>
+            <td>
+                <select id="REG4_BIT7" onchange="Refresh()">
+                    <option>Parallel CMOS interface. (0)</option>
+                    <option>DDR LVDS interface. (1)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG05 (0x44) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>4:2<br>(CLKOUT POSN)</th>
+            <td>
+                LVDS - Output clock falling edge position<br>
+                CMOS - Output clock rising edge position
+            </td>
+            <td>
+                <select id="REG5_BIT4:2" onchange="Refresh()">
+                    <option>Default output clock position (refer to timing specification table). (000)</option>
+                    <option>-</option>
+                    <option>-</option>
+                    <option>-</option>
+                    <option>Default output clock position (refer to timing specification table). (100)</option>
+                    <option>shifted (delayed) by + (4/26)×Ts. (101)</option>
+					<option>shifted (advanced) by – (7/26)×Ts. (110)</option>
+					<option>shifted (advanced) by – (4/26)×Ts. (111)</option>
+                </select>
+            </td>
+			<td>Keep the same duty cycle, move both edges by the same amount(i.e. write the same value to 7:5)</td>
+        </tr>
+		<tr>
+            <td>7:5<br>(CLKOUT POSN)</th>
+            <td>
+                LVDS - Output clock rising edge position<br>
+                CMOS - Output clock falling edge position
+            </td>
+            <td>
+                <select id="REG5_BIT7:5" onchange="Refresh()">
+                    <option>Default output clock position. (000)</option>
+                    <option>-</option>
+                    <option>-</option>
+                    <option>-</option>
+                    <option>Default output clock position. (100)</option>
+                    <option>shifted (delayed) by + (4/26)×Ts. (101)</option>
+					<option>shifted (advanced) by – (7/26)×Ts. (110)</option>
+					<option>shifted (advanced) by – (4/26)×Ts. (111)</option>
+                </select>
+            </td>
+			<td>Keep the same duty cycle, move both edges by the same amount(i.e. write the same value to 4:2)</td>
+        </tr>     
+    </table>
+    
+    <h2> REG06 (0x50) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>2:1<br>(DATA FORMAT)</th>
+            <td></th>
+            <td>
+                <select id="REG6_BIT2:1" onchange="Refresh()">
+                    <option>-</option>
+                    <option>-</option>
+                    <option>2s complement. (10)</option>
+                    <option>Offset binary. (11)</option>
+                </select>
+            </td>
+			<td></td>
+        </tr>
+		<tr>
+            <td>6<br>(ENABLE INDEPENDENT CHANNEL CONTROL)</th>
+            <td></th>
+            <td>
+                <select id="REG6_BIT6" onchange="Refresh()">
+                    <option>Common control. (0)</option>
+                    <option>Independent control. (1)</option>
+                </select>
+            </td>
+			<td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG07 (0x51) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>7:0<br>(CUSTOM PATTERN LOW)</td>
+            <td></td>
+            <td>
+                <select id="REG7_BIT7:0" onchange="Refresh()">
+                    <option>0x00</option>
+					<option>0x01</option>
+					<option>0x02</option>
+					<option>0x03</option>
+					<option>0x04</option>
+					<option>0x05</option>
+					<option>0x06</option>
+					<option>0x07</option>
+					<option>0x08</option>
+					<option>0x09</option>
+					<option>0x0a</option>
+					<option>0x0b</option>
+					<option>0x0c</option>
+					<option>0x0d</option>
+					<option>0x0e</option>
+					<option>0x0f</option>
+					<option>0x10</option>
+					<option>0x11</option>
+					<option>0x12</option>
+					<option>0x13</option>
+					<option>0x14</option>
+					<option>0x15</option>
+					<option>0x16</option>
+					<option>0x17</option>
+					<option>0x18</option>
+					<option>0x19</option>
+					<option>0x1a</option>
+					<option>0x1b</option>
+					<option>0x1c</option>
+					<option>0x1d</option>
+					<option>0x1e</option>
+					<option>0x1f</option>
+					<option>0x20</option>
+					<option>0x21</option>
+					<option>0x22</option>
+					<option>0x23</option>
+					<option>0x24</option>
+					<option>0x25</option>
+					<option>0x26</option>
+					<option>0x27</option>
+					<option>0x28</option>
+					<option>0x29</option>
+					<option>0x2a</option>
+					<option>0x2b</option>
+					<option>0x2c</option>
+					<option>0x2d</option>
+					<option>0x2e</option>
+					<option>0x2f</option>
+					<option>0x30</option>
+					<option>0x31</option>
+					<option>0x32</option>
+					<option>0x33</option>
+					<option>0x34</option>
+					<option>0x35</option>
+					<option>0x36</option>
+					<option>0x37</option>
+					<option>0x38</option>
+					<option>0x39</option>
+					<option>0x3a</option>
+					<option>0x3b</option>
+					<option>0x3c</option>
+					<option>0x3d</option>
+					<option>0x3e</option>
+					<option>0x3f</option>
+					<option>0x40</option>
+					<option>0x41</option>
+					<option>0x42</option>
+					<option>0x43</option>
+					<option>0x44</option>
+					<option>0x45</option>
+					<option>0x46</option>
+					<option>0x47</option>
+					<option>0x48</option>
+					<option>0x49</option>
+					<option>0x4a</option>
+					<option>0x4b</option>
+					<option>0x4c</option>
+					<option>0x4d</option>
+					<option>0x4e</option>
+					<option>0x4f</option>
+					<option>0x50</option>
+					<option>0x51</option>
+					<option>0x52</option>
+					<option>0x53</option>
+					<option>0x54</option>
+					<option>0x55</option>
+					<option>0x56</option>
+					<option>0x57</option>
+					<option>0x58</option>
+					<option>0x59</option>
+					<option>0x5a</option>
+					<option>0x5b</option>
+					<option>0x5c</option>
+					<option>0x5d</option>
+					<option>0x5e</option>
+					<option>0x5f</option>
+					<option>0x60</option>
+					<option>0x61</option>
+					<option>0x62</option>
+					<option>0x63</option>
+					<option>0x64</option>
+					<option>0x65</option>
+					<option>0x66</option>
+					<option>0x67</option>
+					<option>0x68</option>
+					<option>0x69</option>
+					<option>0x6a</option>
+					<option>0x6b</option>
+					<option>0x6c</option>
+					<option>0x6d</option>
+					<option>0x6e</option>
+					<option>0x6f</option>
+					<option>0x70</option>
+					<option>0x71</option>
+					<option>0x72</option>
+					<option>0x73</option>
+					<option>0x74</option>
+					<option>0x75</option>
+					<option>0x76</option>
+					<option>0x77</option>
+					<option>0x78</option>
+					<option>0x79</option>
+					<option>0x7a</option>
+					<option>0x7b</option>
+					<option>0x7c</option>
+					<option>0x7d</option>
+					<option>0x7e</option>
+					<option>0x7f</option>
+					<option>0x80</option>
+					<option>0x81</option>
+					<option>0x82</option>
+					<option>0x83</option>
+					<option>0x84</option>
+					<option>0x85</option>
+					<option>0x86</option>
+					<option>0x87</option>
+					<option>0x88</option>
+					<option>0x89</option>
+					<option>0x8a</option>
+					<option>0x8b</option>
+					<option>0x8c</option>
+					<option>0x8d</option>
+					<option>0x8e</option>
+					<option>0x8f</option>
+					<option>0x90</option>
+					<option>0x91</option>
+					<option>0x92</option>
+					<option>0x93</option>
+					<option>0x94</option>
+					<option>0x95</option>
+					<option>0x96</option>
+					<option>0x97</option>
+					<option>0x98</option>
+					<option>0x99</option>
+					<option>0x9a</option>
+					<option>0x9b</option>
+					<option>0x9c</option>
+					<option>0x9d</option>
+					<option>0x9e</option>
+					<option>0x9f</option>
+					<option>0xa0</option>
+					<option>0xa1</option>
+					<option>0xa2</option>
+					<option>0xa3</option>
+					<option>0xa4</option>
+					<option>0xa5</option>
+					<option>0xa6</option>
+					<option>0xa7</option>
+					<option>0xa8</option>
+					<option>0xa9</option>
+					<option>0xaa</option>
+					<option>0xab</option>
+					<option>0xac</option>
+					<option>0xad</option>
+					<option>0xae</option>
+					<option>0xaf</option>
+					<option>0xb0</option>
+					<option>0xb1</option>
+					<option>0xb2</option>
+					<option>0xb3</option>
+					<option>0xb4</option>
+					<option>0xb5</option>
+					<option>0xb6</option>
+					<option>0xb7</option>
+					<option>0xb8</option>
+					<option>0xb9</option>
+					<option>0xba</option>
+					<option>0xbb</option>
+					<option>0xbc</option>
+					<option>0xbd</option>
+					<option>0xbe</option>
+					<option>0xbf</option>
+					<option>0xc0</option>
+					<option>0xc1</option>
+					<option>0xc2</option>
+					<option>0xc3</option>
+					<option>0xc4</option>
+					<option>0xc5</option>
+					<option>0xc6</option>
+					<option>0xc7</option>
+					<option>0xc8</option>
+					<option>0xc9</option>
+					<option>0xca</option>
+					<option>0xcb</option>
+					<option>0xcc</option>
+					<option>0xcd</option>
+					<option>0xce</option>
+					<option>0xcf</option>
+					<option>0xd0</option>
+					<option>0xd1</option>
+					<option>0xd2</option>
+					<option>0xd3</option>
+					<option>0xd4</option>
+					<option>0xd5</option>
+					<option>0xd6</option>
+					<option>0xd7</option>
+					<option>0xd8</option>
+					<option>0xd9</option>
+					<option>0xda</option>
+					<option>0xdb</option>
+					<option>0xdc</option>
+					<option>0xdd</option>
+					<option>0xde</option>
+					<option>0xdf</option>
+					<option>0xe0</option>
+					<option>0xe1</option>
+					<option>0xe2</option>
+					<option>0xe3</option>
+					<option>0xe4</option>
+					<option>0xe5</option>
+					<option>0xe6</option>
+					<option>0xe7</option>
+					<option>0xe8</option>
+					<option>0xe9</option>
+					<option>0xea</option>
+					<option>0xeb</option>
+					<option>0xec</option>
+					<option>0xed</option>
+					<option>0xee</option>
+					<option>0xef</option>
+					<option>0xf0</option>
+					<option>0xf1</option>
+					<option>0xf2</option>
+					<option>0xf3</option>
+					<option>0xf4</option>
+					<option>0xf5</option>
+					<option>0xf6</option>
+					<option>0xf7</option>
+					<option>0xf8</option>
+					<option>0xf9</option>
+					<option>0xfa</option>
+					<option>0xfb</option>
+					<option>0xfc</option>
+					<option>0xfd</option>
+					<option>0xfe</option>
+					<option>0xff</option>
+                </select>
+            </td>
+            <td>8 LSB bit for custom pattern used with "Test pattern" reg 0x62</td>
+        </tr>
+      
+    </table>
+
+    <h2> REG08 (0x52) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>5:0<br>(CUSTOM PATTERN HIGH)</td>
+            <td></td>
+            <td>
+                <select id="REG8_BIT5:0" onchange="Refresh()">
+                    <option>0x00</option>
+					<option>0x01</option>
+					<option>0x02</option>
+					<option>0x03</option>
+					<option>0x04</option>
+					<option>0x05</option>
+					<option>0x06</option>
+					<option>0x07</option>
+					<option>0x08</option>
+					<option>0x09</option>
+					<option>0x0a</option>
+					<option>0x0b</option>
+					<option>0x0c</option>
+					<option>0x0d</option>
+					<option>0x0e</option>
+					<option>0x0f</option>
+					<option>0x10</option>
+					<option>0x11</option>
+					<option>0x12</option>
+					<option>0x13</option>
+					<option>0x14</option>
+					<option>0x15</option>
+					<option>0x16</option>
+					<option>0x17</option>
+					<option>0x18</option>
+					<option>0x19</option>
+					<option>0x1a</option>
+					<option>0x1b</option>
+					<option>0x1c</option>
+					<option>0x1d</option>
+					<option>0x1e</option>
+					<option>0x1f</option>
+					<option>0x20</option>
+					<option>0x21</option>
+					<option>0x22</option>
+					<option>0x23</option>
+					<option>0x24</option>
+					<option>0x25</option>
+					<option>0x26</option>
+					<option>0x27</option>
+					<option>0x28</option>
+					<option>0x29</option>
+					<option>0x2a</option>
+					<option>0x2b</option>
+					<option>0x2c</option>
+					<option>0x2d</option>
+					<option>0x2e</option>
+					<option>0x2f</option>
+					<option>0x30</option>
+					<option>0x31</option>
+					<option>0x32</option>
+					<option>0x33</option>
+					<option>0x34</option>
+					<option>0x35</option>
+					<option>0x36</option>
+					<option>0x37</option>
+					<option>0x38</option>
+					<option>0x39</option>
+					<option>0x3a</option>
+					<option>0x3b</option>
+					<option>0x3c</option>
+					<option>0x3d</option>
+					<option>0x3e</option>
+					<option>0x3f</option>
+                </select>
+            </td>
+            <td>6 MSB bit for custom pattern used with "Test pattern" reg 0x62</td>
+		</tr>
+      
+    </table>
+    
+    <h2> REG09 (0x53) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>6<br>(ENABLE OFFSET CORRECTION – Common/Ch A)</th>
+            <td></th>
+            <td>
+                <select id="REG9_BIT6" onchange="Refresh()">
+                    <option>Offset correction disabled. (0)</option>
+                    <option>Offset correction enabled. (1)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG10 (0x55) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>3:0<br>(OFFSET CORR TIME CONSTANT – Common/Ch A)</th>
+            <td></th>
+            <td>
+                <select id="REG10_BIT3:0" onchange="Refresh()">
+                    <option>256 k. (0000)</option>
+					<option>512 k. (0001)</option>
+					<option>1 M. (0010)</option>
+					<option>2 M. (0011)</option>
+					<option>4 M. (0100)</option>
+					<option>8 M. (0101)</option>
+					<option>16 M. (0110)</option>
+					<option>32 M. (0111)</option>
+					<option>64 M. (1000)</option>
+					<option>128 M. (1001)</option>
+					<option>256 M. (1010)</option>
+					<option>512 M. (1011)</option>
+                </select>
+            </td>
+			<td></td>
+		<tr>
+            <td>7:4<br>(GAIN – Common/Ch A)</th>
+            <td></th>
+            <td>
+                <select id="REG10_BIT7:4" onchange="Refresh()">
+                    <option> 0 dB gain. (0000)</option>
+					<option> 0.5 dB gain. (0001)</option>
+					<option> 1.0 dB gain. (0010)</option>
+					<option> 1.5 dB gain. (0011)</option>
+					<option> 2.0 dB gain. (0100)</option>
+					<option> 2.5 dB gain. (0101)</option>
+					<option> 3.0 dB gain. (0110)</option>
+					<option> 3.5 dB gain. (0111)</option>
+					<option> 4.0 dB gain. (1000)</option>
+					<option> 4.5 dB gain. (1001)</option>
+					<option> 5.0 dB gain. (1010)</option>
+					<option> 5.5 dB gain. (1011)</option>
+					<option> 6.0 dB gain. (1100)</option>
+                </select>
+            </td>
+			<td></td>
+        </tr>
+        </tr>
+      
+    </table>
+    
+    <h2> REG11 (0x57) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>6:0<br>(FINE GAIN ADJUST)</td>
+            <td>FINE GAIN ADJUST – Common/Ch A</td>
+            <td>
+                <select id="REG11_BIT6:0" onchange="Refresh()">
+                    <option>+0.0 dB dB</option>
+					<option>+0.00106 dB</option>
+					<option>+0.00212 dB</option>
+					<option>+0.00318 dB</option>
+					<option>+0.00424 dB</option>
+					<option>+0.0053 dB</option>
+					<option>+0.00636 dB</option>
+					<option>+0.00742 dB</option>
+					<option>+0.00848 dB</option>
+					<option>+0.00954 dB</option>
+					<option>+0.0106 dB</option>
+					<option>+0.0117 dB</option>
+					<option>+0.0127 dB</option>
+					<option>+0.0138 dB</option>
+					<option>+0.0148 dB</option>
+					<option>+0.0159 dB</option>
+					<option>+0.0169 dB</option>
+					<option>+0.018  dB</option>
+					<option>+0.0191 dB</option>
+					<option>+0.0201 dB</option>
+					<option>+0.0212 dB</option>
+					<option>+0.0222 dB</option>
+					<option>+0.0233 dB</option>
+					<option>+0.0244 dB</option>
+					<option>+0.0254 dB</option>
+					<option>+0.0265 dB</option>
+					<option>+0.0275 dB</option>
+					<option>+0.0286 dB</option>
+					<option>+0.0296 dB</option>
+					<option>+0.0307 dB</option>
+					<option>+0.0318 dB</option>
+					<option>+0.0328 dB</option>
+					<option>+0.0339 dB</option>
+					<option>+0.0349 dB</option>
+					<option>+0.036 dB</option>
+					<option>+0.037 dB</option>
+					<option>+0.0381 dB</option>
+					<option>+0.0391 dB</option>
+					<option>+0.0402 dB</option>
+					<option>+0.0413 dB</option>
+					<option>+0.0423 dB</option>
+					<option>+0.0434 dB</option>
+					<option>+0.0444 dB</option>
+					<option>+0.0455 dB</option>
+					<option>+0.0465 dB</option>
+					<option>+0.0476 dB</option>
+					<option>+0.0486 dB</option>
+					<option>+0.0497 dB</option>
+					<option>+0.0507 dB</option>
+					<option>+0.0518 dB</option>
+					<option>+0.0529 dB</option>
+					<option>+0.0539 dB</option>
+					<option>+0.055 dB</option>
+					<option>+0.056 dB</option>
+					<option>+0.0571 dB</option>
+					<option>+0.0581 dB</option>
+					<option>+0.0592 dB</option>
+					<option>+0.0602 dB</option>
+					<option>+0.0613 dB</option>
+					<option>+0.0623 dB</option>
+					<option>+0.0634 dB</option>
+					<option>+0.0644 dB</option>
+					<option>+0.0655 dB</option>
+					<option>+0.0665 dB</option>
+					<option>+0.0676 dB</option>
+					<option>+0.0686 dB</option>
+					<option>+0.0697 dB</option>
+					<option>+0.0708 dB</option>
+					<option>+0.0718 dB</option>
+					<option>+0.0729 dB</option>
+					<option>+0.0739 dB</option>
+					<option>+0.075 dB</option>
+					<option>+0.076 dB</option>
+					<option>+0.0771 dB</option>
+					<option>+0.0781 dB</option>
+					<option>+0.0792 dB</option>
+					<option>+0.0802 dB</option>
+					<option>+0.0813 dB</option>
+					<option>+0.0823 dB</option>
+					<option>+0.0834 dB</option>
+					<option>+0.0844 dB</option>
+					<option>+0.0855 dB</option>
+					<option>+0.0865 dB</option>
+					<option>+0.0876 dB</option>
+					<option>+0.0886 dB</option>
+					<option>+0.0897 dB</option>
+					<option>+0.0907 dB</option>
+					<option>+0.0918 dB</option>
+					<option>+0.0928 dB</option>
+					<option>+0.0939 dB</option>
+					<option>+0.0949 dB</option>
+					<option>+0.096 dB</option>
+					<option>+0.097 dB</option>
+					<option>+0.0981 dB</option>
+					<option>+0.0991 dB</option>
+					<option>+0.100 dB</option>
+					<option>+0.101 dB</option>
+					<option>+0.102 dB</option>
+					<option>+0.103 dB</option>
+					<option>+0.104 dB</option>
+					<option>+0.105 dB</option>
+					<option>+0.106 dB</option>
+					<option>+0.107 dB</option>
+					<option>+0.109 dB</option>
+					<option>+0.110 dB</option>
+					<option>+0.111 dB</option>
+					<option>+0.112 dB</option>
+					<option>+0.113 dB</option>
+					<option>+0.114 dB</option>
+					<option>+0.115 dB</option>
+					<option>+0.116 dB</option>
+					<option>+0.117 dB</option>
+					<option>+0.118 dB</option>
+					<option>+0.119 dB</option>
+					<option>+0.120 dB</option>
+					<option>+0.121 dB</option>
+					<option>+0.122 dB</option>
+					<option>+0.123 dB</option>
+					<option>+0.124 dB</option>
+					<option>+0.125 dB</option>
+					<option>+0.126 dB</option>
+					<option>+0.127 dB</option>
+					<option>+0.128 dB</option>
+					<option>+0.129 dB</option>
+					<option>+0.130 dB</option>
+					<option>+0.132 dB</option>
+					<option>+0.133 dB</option>
+					<option>+0.134 dB</option>
+                </select>
+            <td>Channel gain = 20*log10[1 + (FINE GAIN ADJUST/8192)]</td>
+            </td>
+		</tr>
+		
+      
+    </table>
+    
+    <h2> REG12 (0x62) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>2:0<br>(TEST PATTERNS)</th>
+            <td></th>
+            <td>
+                <select id="REG12_BIT2:0" onchange="Refresh()">
+                    <option>Normal operation. (000)</option>
+					<option>Outputs all zeros. (001)</option>
+					<option>Outputs all ones. (010)</option>
+					<option>Outputs toggle pattern. (011)</option>
+					<option>Outputs digital ramp. (100)</option>
+					<option>Outputs custom pattern. (101)</option>
+					<option>Unused. (110)</option>
+					<option>Unused. (111)</option>
+                </select>
+            </td>
+            <td>Config for channel A only if independet mode is enabled, for both channels in other case</td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG13 (0x63) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>5:0<br>(OFFSET PEDESTAL – Common/Ch A)</td>
+            <td></td>
+            <td>
+                <select id="REG13_BIT5:0" onchange="Refresh()">
+					<option>PEDESTAL = 0 LSB. (000000) </option>
+					<option>PEDESTAL = 1 LSB. (000001) </option>
+					<option>PEDESTAL = 2 LSB. (000010) </option>
+					<option>PEDESTAL = 3 LSB. (000011) </option>
+					<option>PEDESTAL = 4 LSB. (000100) </option>
+					<option>PEDESTAL = 5 LSB. (000101) </option>
+					<option>PEDESTAL = 6 LSB. (000110) </option>
+					<option>PEDESTAL = 7 LSB. (000111) </option>
+					<option>PEDESTAL = 8 LSB. (001000) </option>
+					<option>PEDESTAL = 9 LSB. (001001) </option>
+					<option>PEDESTAL = 10 LSB. (001010) </option>
+					<option>PEDESTAL = 11 LSB. (001011) </option>
+					<option>PEDESTAL = 12 LSB. (001100) </option>
+					<option>PEDESTAL = 13 LSB. (001101) </option>
+					<option>PEDESTAL = 14 LSB. (001110) </option>
+					<option>PEDESTAL = 15 LSB. (001111) </option>
+					<option>PEDESTAL = 16 LSB. (010000) </option>
+					<option>PEDESTAL = 17 LSB. (010001) </option>
+					<option>PEDESTAL = 18 LSB. (010010) </option>
+					<option>PEDESTAL = 19 LSB. (010011) </option>
+					<option>PEDESTAL = 20 LSB. (010100) </option>
+					<option>PEDESTAL = 21 LSB. (010101) </option>
+					<option>PEDESTAL = 22 LSB. (010110) </option>
+					<option>PEDESTAL = 23 LSB. (010111) </option>
+					<option>PEDESTAL = 24 LSB. (011000) </option>
+					<option>PEDESTAL = 25 LSB. (011001) </option>
+					<option>PEDESTAL = 26 LSB. (011010) </option>
+					<option>PEDESTAL = 27 LSB. (011011) </option>
+					<option>PEDESTAL = 28 LSB. (011100) </option>
+					<option>PEDESTAL = 29 LSB. (011101) </option>
+					<option>PEDESTAL = 30 LSB. (011110) </option>
+					<option>PEDESTAL = 31 LSB. (011111) </option>
+					<option>PEDESTAL = -32 LSB. (100000) </option>
+					<option>PEDESTAL = -31 LSB. (100001) </option>
+					<option>PEDESTAL = -30 LSB. (100010) </option>
+					<option>PEDESTAL = -29 LSB. (100011) </option>
+					<option>PEDESTAL = -28 LSB. (100100) </option>
+					<option>PEDESTAL = -27 LSB. (100101) </option>
+					<option>PEDESTAL = -26 LSB. (100110) </option>
+					<option>PEDESTAL = -25 LSB. (100111) </option>
+					<option>PEDESTAL = -24 LSB. (101000) </option>
+					<option>PEDESTAL = -23 LSB. (101001) </option>
+					<option>PEDESTAL = -22 LSB. (101010) </option>
+					<option>PEDESTAL = -21 LSB. (101011) </option>
+					<option>PEDESTAL = -20 LSB. (101100) </option>
+					<option>PEDESTAL = -19 LSB. (101101) </option>
+					<option>PEDESTAL = -18 LSB. (101110) </option>
+					<option>PEDESTAL = -17 LSB. (101111) </option>
+					<option>PEDESTAL = -16 LSB. (110000) </option>
+					<option>PEDESTAL = -15 LSB. (110001) </option>
+					<option>PEDESTAL = -14 LSB. (110010) </option>
+					<option>PEDESTAL = -13 LSB. (110011) </option>
+					<option>PEDESTAL = -12 LSB. (110100) </option>
+					<option>PEDESTAL = -11 LSB. (110101) </option>
+					<option>PEDESTAL = -10 LSB. (110110) </option>
+					<option>PEDESTAL = -9 LSB. (110111) </option>
+					<option>PEDESTAL = -8 LSB. (111000) </option>
+					<option>PEDESTAL = -7 LSB. (111001) </option>
+					<option>PEDESTAL = -6 LSB. (111010) </option>
+					<option>PEDESTAL = -5 LSB. (111011) </option>
+					<option>PEDESTAL = -4 LSB. (111100) </option>
+					<option>PEDESTAL = -3 LSB. (111101) </option>
+					<option>PEDESTAL = -2 LSB. (111110) </option>
+					<option>PEDESTAL = -1 LSB. (111111) </option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG14 (0x66) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>6<br>(ENABLE OFFSET CORRECTION – CH B)</th>
+            <td></th>
+            <td>
+                <select id="REG14_BIT6" onchange="Refresh()">
+                    <option>Offset correction disabled. (0)</option>
+                    <option>Offset correction enabled. (1)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG15 (0x68) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>3:0<br>(OFFSET CORR TIME CONSTANT – CH B)</th>
+            <td></th>
+            <td>
+                <select id="REG15_BIT3:0" onchange="Refresh()">
+                    <option>256 k. (0000)</option>
+					<option>512 k. (0001)</option>
+					<option>1 M. (0010)</option>
+					<option>2 M. (0011)</option>
+					<option>4 M. (0100)</option>
+					<option>8 M. (0101)</option>
+					<option>16 M. (0110)</option>
+					<option>32 M. (0111)</option>
+					<option>64 M. (1000)</option>
+					<option>128 M. (1001)</option>
+					<option>256 M. (1010)</option>
+					<option>512 M. (1011)</option>
+                </select>
+            </td>
+			<td></td>
+        </tr>
+		<tr>
+            <td>7:4<br>(GAIN – CH B)</th>
+            <td></th>
+            <td>
+                <select id="REG15_BIT7:4" onchange="Refresh()">
+                    <option> 0 dB gain. (0000)</option>
+					<option> 0.5 dB gain. (0001)</option>
+					<option> 1.0 dB gain. (0010)</option>
+					<option> 1.5 dB gain. (0011)</option>
+					<option> 2.0 dB gain. (0100)</option>
+					<option> 2.5 dB gain. (0101)</option>
+					<option> 3.0 dB gain. (0110)</option>
+					<option> 3.5 dB gain. (0111)</option>
+					<option> 4.0 dB gain. (1000)</option>
+					<option> 4.5 dB gain. (1001)</option>
+					<option> 5.0 dB gain. (1010)</option>
+					<option> 5.5 dB gain. (1011)</option>
+					<option> 6.0 dB gain. (1100)</option>
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG16 (0x6A) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+        <tr>
+            <td>6:0<br>(FINE GAIN ADJUST)</td>
+            <td>FINE GAIN ADJUST – CH B</td>
+            <td>
+                <select id="REG16_BIT6:0" onchange="Refresh()">
+                    <option>+0.0 dB dB</option>
+					<option>+0.00106 dB</option>
+					<option>+0.00212 dB</option>
+					<option>+0.00318 dB</option>
+					<option>+0.00424 dB</option>
+					<option>+0.0053 dB</option>
+					<option>+0.00636 dB</option>
+					<option>+0.00742 dB</option>
+					<option>+0.00848 dB</option>
+					<option>+0.00954 dB</option>
+					<option>+0.0106 dB</option>
+					<option>+0.0117 dB</option>
+					<option>+0.0127 dB</option>
+					<option>+0.0138 dB</option>
+					<option>+0.0148 dB</option>
+					<option>+0.0159 dB</option>
+					<option>+0.0169 dB</option>
+					<option>+0.018  dB</option>
+					<option>+0.0191 dB</option>
+					<option>+0.0201 dB</option>
+					<option>+0.0212 dB</option>
+					<option>+0.0222 dB</option>
+					<option>+0.0233 dB</option>
+					<option>+0.0244 dB</option>
+					<option>+0.0254 dB</option>
+					<option>+0.0265 dB</option>
+					<option>+0.0275 dB</option>
+					<option>+0.0286 dB</option>
+					<option>+0.0296 dB</option>
+					<option>+0.0307 dB</option>
+					<option>+0.0318 dB</option>
+					<option>+0.0328 dB</option>
+					<option>+0.0339 dB</option>
+					<option>+0.0349 dB</option>
+					<option>+0.036 dB</option>
+					<option>+0.037 dB</option>
+					<option>+0.0381 dB</option>
+					<option>+0.0391 dB</option>
+					<option>+0.0402 dB</option>
+					<option>+0.0413 dB</option>
+					<option>+0.0423 dB</option>
+					<option>+0.0434 dB</option>
+					<option>+0.0444 dB</option>
+					<option>+0.0455 dB</option>
+					<option>+0.0465 dB</option>
+					<option>+0.0476 dB</option>
+					<option>+0.0486 dB</option>
+					<option>+0.0497 dB</option>
+					<option>+0.0507 dB</option>
+					<option>+0.0518 dB</option>
+					<option>+0.0529 dB</option>
+					<option>+0.0539 dB</option>
+					<option>+0.055 dB</option>
+					<option>+0.056 dB</option>
+					<option>+0.0571 dB</option>
+					<option>+0.0581 dB</option>
+					<option>+0.0592 dB</option>
+					<option>+0.0602 dB</option>
+					<option>+0.0613 dB</option>
+					<option>+0.0623 dB</option>
+					<option>+0.0634 dB</option>
+					<option>+0.0644 dB</option>
+					<option>+0.0655 dB</option>
+					<option>+0.0665 dB</option>
+					<option>+0.0676 dB</option>
+					<option>+0.0686 dB</option>
+					<option>+0.0697 dB</option>
+					<option>+0.0708 dB</option>
+					<option>+0.0718 dB</option>
+					<option>+0.0729 dB</option>
+					<option>+0.0739 dB</option>
+					<option>+0.075 dB</option>
+					<option>+0.076 dB</option>
+					<option>+0.0771 dB</option>
+					<option>+0.0781 dB</option>
+					<option>+0.0792 dB</option>
+					<option>+0.0802 dB</option>
+					<option>+0.0813 dB</option>
+					<option>+0.0823 dB</option>
+					<option>+0.0834 dB</option>
+					<option>+0.0844 dB</option>
+					<option>+0.0855 dB</option>
+					<option>+0.0865 dB</option>
+					<option>+0.0876 dB</option>
+					<option>+0.0886 dB</option>
+					<option>+0.0897 dB</option>
+					<option>+0.0907 dB</option>
+					<option>+0.0918 dB</option>
+					<option>+0.0928 dB</option>
+					<option>+0.0939 dB</option>
+					<option>+0.0949 dB</option>
+					<option>+0.096 dB</option>
+					<option>+0.097 dB</option>
+					<option>+0.0981 dB</option>
+					<option>+0.0991 dB</option>
+					<option>+0.100 dB</option>
+					<option>+0.101 dB</option>
+					<option>+0.102 dB</option>
+					<option>+0.103 dB</option>
+					<option>+0.104 dB</option>
+					<option>+0.105 dB</option>
+					<option>+0.106 dB</option>
+					<option>+0.107 dB</option>
+					<option>+0.109 dB</option>
+					<option>+0.110 dB</option>
+					<option>+0.111 dB</option>
+					<option>+0.112 dB</option>
+					<option>+0.113 dB</option>
+					<option>+0.114 dB</option>
+					<option>+0.115 dB</option>
+					<option>+0.116 dB</option>
+					<option>+0.117 dB</option>
+					<option>+0.118 dB</option>
+					<option>+0.119 dB</option>
+					<option>+0.120 dB</option>
+					<option>+0.121 dB</option>
+					<option>+0.122 dB</option>
+					<option>+0.123 dB</option>
+					<option>+0.124 dB</option>
+					<option>+0.125 dB</option>
+					<option>+0.126 dB</option>
+					<option>+0.127 dB</option>
+					<option>+0.128 dB</option>
+					<option>+0.129 dB</option>
+					<option>+0.130 dB</option>
+					<option>+0.132 dB</option>
+					<option>+0.133 dB</option>
+					<option>+0.134 dB</option>
+                </select>
+            </td>
+            <td>Channel gain = 20*log10[1 + (FINE GAIN ADJUST/8192)]</td>
+		</tr>
+      
+    </table>
+    
+    <h2> REG17 (0x75) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>2:0<br>(TEST PATTERNS)</th>
+            <td></th>
+            <td>
+                <select id="REG17_BIT2:0" onchange="Refresh()">
+                    <option>Normal operation. (000)</option>
+					<option>Outputs all zeros. (001)</option>
+					<option>Outputs all ones. (010)</option>
+					<option>Outputs toggle pattern. (011)</option>
+					<option>Outputs digital ramp. (100)</option>
+					<option>Outputs custom pattern. (101)</option>
+					<option>Unused. (110)</option>
+					<option>Unused. (111)</option>
+                </select>
+            </td>
+            <td>Config for channel B only if independet mode is enabled</td>
+        </tr>
+      
+    </table>
+    
+    <h2> REG18 (0x76) </h2>
+    <table>
+        <tr>
+            <th>REGISTER BIT</th>
+            <th>RELATED BLOCK</th>
+            <th>FUNCTION</th>
+            <th>COMMENT</th>
+        </tr>
+		<tr>
+            <td>5:0<br>(OFFSET PEDESTAL – Common/CH B)</td>
+            <td></td>
+            <td>
+                <select id="REG18_BIT5:0" onchange="Refresh()">
+					<option>PEDESTAL = 0 LSB. (000000) </option>
+					<option>PEDESTAL = 1 LSB. (000001) </option>
+					<option>PEDESTAL = 2 LSB. (000010) </option>
+					<option>PEDESTAL = 3 LSB. (000011) </option>
+					<option>PEDESTAL = 4 LSB. (000100) </option>
+					<option>PEDESTAL = 5 LSB. (000101) </option>
+					<option>PEDESTAL = 6 LSB. (000110) </option>
+					<option>PEDESTAL = 7 LSB. (000111) </option>
+					<option>PEDESTAL = 8 LSB. (001000) </option>
+					<option>PEDESTAL = 9 LSB. (001001) </option>
+					<option>PEDESTAL = 10 LSB. (001010) </option>
+					<option>PEDESTAL = 11 LSB. (001011) </option>
+					<option>PEDESTAL = 12 LSB. (001100) </option>
+					<option>PEDESTAL = 13 LSB. (001101) </option>
+					<option>PEDESTAL = 14 LSB. (001110) </option>
+					<option>PEDESTAL = 15 LSB. (001111) </option>
+					<option>PEDESTAL = 16 LSB. (010000) </option>
+					<option>PEDESTAL = 17 LSB. (010001) </option>
+					<option>PEDESTAL = 18 LSB. (010010) </option>
+					<option>PEDESTAL = 19 LSB. (010011) </option>
+					<option>PEDESTAL = 20 LSB. (010100) </option>
+					<option>PEDESTAL = 21 LSB. (010101) </option>
+					<option>PEDESTAL = 22 LSB. (010110) </option>
+					<option>PEDESTAL = 23 LSB. (010111) </option>
+					<option>PEDESTAL = 24 LSB. (011000) </option>
+					<option>PEDESTAL = 25 LSB. (011001) </option>
+					<option>PEDESTAL = 26 LSB. (011010) </option>
+					<option>PEDESTAL = 27 LSB. (011011) </option>
+					<option>PEDESTAL = 28 LSB. (011100) </option>
+					<option>PEDESTAL = 29 LSB. (011101) </option>
+					<option>PEDESTAL = 30 LSB. (011110) </option>
+					<option>PEDESTAL = 31 LSB. (011111) </option>
+					<option>PEDESTAL = -32 LSB. (100000) </option>
+					<option>PEDESTAL = -31 LSB. (100001) </option>
+					<option>PEDESTAL = -30 LSB. (100010) </option>
+					<option>PEDESTAL = -29 LSB. (100011) </option>
+					<option>PEDESTAL = -28 LSB. (100100) </option>
+					<option>PEDESTAL = -27 LSB. (100101) </option>
+					<option>PEDESTAL = -26 LSB. (100110) </option>
+					<option>PEDESTAL = -25 LSB. (100111) </option>
+					<option>PEDESTAL = -24 LSB. (101000) </option>
+					<option>PEDESTAL = -23 LSB. (101001) </option>
+					<option>PEDESTAL = -22 LSB. (101010) </option>
+					<option>PEDESTAL = -21 LSB. (101011) </option>
+					<option>PEDESTAL = -20 LSB. (101100) </option>
+					<option>PEDESTAL = -19 LSB. (101101) </option>
+					<option>PEDESTAL = -18 LSB. (101110) </option>
+					<option>PEDESTAL = -17 LSB. (101111) </option>
+					<option>PEDESTAL = -16 LSB. (110000) </option>
+					<option>PEDESTAL = -15 LSB. (110001) </option>
+					<option>PEDESTAL = -14 LSB. (110010) </option>
+					<option>PEDESTAL = -13 LSB. (110011) </option>
+					<option>PEDESTAL = -12 LSB. (110100) </option>
+					<option>PEDESTAL = -11 LSB. (110101) </option>
+					<option>PEDESTAL = -10 LSB. (110110) </option>
+					<option>PEDESTAL = -9 LSB. (110111) </option>
+					<option>PEDESTAL = -8 LSB. (111000) </option>
+					<option>PEDESTAL = -7 LSB. (111001) </option>
+					<option>PEDESTAL = -6 LSB. (111010) </option>
+					<option>PEDESTAL = -5 LSB. (111011) </option>
+					<option>PEDESTAL = -4 LSB. (111100) </option>
+					<option>PEDESTAL = -3 LSB. (111101) </option>
+					<option>PEDESTAL = -2 LSB. (111110) </option>
+					<option>PEDESTAL = -1 LSB. (111111) </option>	
+                </select>
+            </td>
+            <td></td>
+        </tr>
+      
+    </table>
+    
+<div style="height:100px;background-color:#bbb;align-items: center;justify-content: center;display: flex;">
+<div>Created by Gorbokonenko Pavel and Tsopanov Danil. Use free and prosper.</div>
+</div>    
+</body>

@@ -1,0 +1,23 @@
+<script>
+    let pageUnSortArray = ["cdce72010", "ads62p49", "dac3283"]
+    
+    window.onload = function() {
+        let pageSortArray = pageUnSortArray.sort();
+        for(let i=0; i<pageSortArray.length; i++) {    
+          	var node = document.createElement("LI");
+          	var link = document.createElement("A");
+          	link.textContent = pageSortArray[i];
+            link.setAttribute('href', "ICs/"+pageSortArray[i]+".html");
+          	node.appendChild(link);
+          	document.getElementById("page_list").appendChild(node);
+        }
+    };
+
+    
+</script>
+
+<body>
+    <ul id="page_list">
+      
+    </ul>
+</body>
